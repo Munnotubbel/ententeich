@@ -33,19 +33,13 @@ if [ $? -eq 0 ]; then
         
         if [ -f "setup.sh" ]; then
             print_fancy "Executing setup.sh..." "yellow" "[INFO]"
-            
-            (
-                rm "$0"
-                if [ $? -eq 0 ]; then
-                    print_fancy "This script has been successfully deleted." "green" "[SUCCESS]"
-                    exec bash setup.sh
-                else
-                    print_fancy "Error deleting this script." "red" "[ERROR]"
-                    exit 1
-                fi
-            ) &
-            
-            exit 0
+            bash setup.sh
+            if [ $? -eq 0 ]; then
+                print_fancy "setup.sh executed successfully." "green" "[SUCCESS]"
+            else
+                print_fancy "Error executing setup.sh." "red" "[ERROR]"
+                exit 1
+            fi
         else
             print_fancy "Error: setup.sh not found." "red" "[ERROR]"
             exit 1
