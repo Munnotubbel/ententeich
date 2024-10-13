@@ -1,0 +1,137 @@
+- name: Get hostname of local machine
+  command: hostname
+  register: hostname_result
+  changed_when: false
+
+- name: Set hostname fact
+  set_fact:
+    local_hostname: "{{ hostname_result.stdout }}"
+
+- name: Create Docker network for KinD and registry
+  docker_network:
+    name: kind
+    state: present
+
+- name: Create registry container
+  docker_container:
+    name: registry
+    image: registry:2
+    ports:
+      - "5000:5000"
+    restart_policy: always
+    networks:
+      - name: kind
+
+- name: Get registry container IP
+  shell: >
+    docker inspect -f '{% raw %}{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}{% endraw %}' registry
+  register: registry_ip
+
+- name: Set registry IP fact
+  set_fact:
+    registry_ip: "{{ registry_ip.stdout }}"
+
+- name: Create KinD configuration file
+  template:
+    src: kind-config.yaml.j2
+    dest: /tmp/kind-config.yaml
+
+- name: Check if KinD cluster exists
+  command: kind get clusters
+  register: kind_clusters
+  changed_when: false
+  ignore_errors: true
+
+- name: Create KinD cluster
+  command: kind create cluster --config /tmp/kind-config.yaml --name kind
+  register: kind_create
+  changed_when: "'Creating cluster' in kind_create.stdout"
+  when: "'kind' not in kind_clusters.stdout"
+
+- name: Add registry host entry to Kind node
+  command: docker exec kind-control-plane sh -c "echo '{{ registry_ip }} registry' >> /etc/hosts"
+  when: kind_create.changed
+
+- name: Connect registry to KinD network
+  docker_container:
+    name: registry
+    networks:
+      - name: kind
+  ignore_errors: yes
+
+- name: Apply local registry configuration
+  command: >
+    kubectl create configmap local-registry-hosting
+    --from-literal=localRegistryHosting.v1='{"host":"{{ registry_ip }}:5000","help":"https://kind.sigs.k8s.io/docs/user/local-registry/"}'
+    -n kube-public
+  ignore_errors: yes
+
+- name: Install NGINX Ingress
+  command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+- name: Wait for Ingress controller to be ready
+  command: >
+    kubectl wait --namespace ingress-nginx
+    --for=condition=ready pod
+    --selector=app.kubernetes.io/component=controller
+    --timeout=300s
+  register: wait_result
+  until: wait_result.rc == 0
+  retries: 10
+  delay: 30
+
+- name: Get cluster IP
+  command: kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'
+  register: cluster_ip_result
+  changed_when: false
+
+- name: Set cluster IP fact
+  set_fact:
+    cluster_ip: "{{ cluster_ip_result.stdout }}"
+
+- name: Create CoreDNS ConfigMap for custom DNS entry
+  template:
+    src: coredns-custom.yaml.j2
+    dest: /tmp/coredns-custom.yaml
+
+- name: Apply CoreDNS custom ConfigMap
+  command: kubectl apply -f /tmp/coredns-custom.yaml
+
+- name: Patch CoreDNS ConfigMap
+  template:
+    src: coredns.yaml.j2
+    dest: /tmp/coredns.yaml
+
+- name: Apply patched CoreDNS ConfigMap
+  command: kubectl apply -f /tmp/coredns.yaml
+
+- name: Restart CoreDNS pods
+  command: kubectl delete pods --namespace kube-system -l k8s-app=kube-dns
+  changed_when: true
+
+- name: Update /etc/hosts for custom domains
+  become: yes
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ cluster_ip }} gitlab.{{ local_hostname }} registry.{{ local_hostname }} frontente.dev frontente.stg frontente.prod kuma.{{ local_hostname }}"
+    state: present
+
+- name: Configure Docker daemon to use local registry as insecure registry
+  become: yes
+  template:
+    src: docker-daemon.json.j2
+    dest: /etc/docker/daemon.json
+  notify: Restart Docker
+
+- name: Wait for registry to be accessible
+  uri:
+    url: "http://{{ registry_ip }}:5000/v2/"
+    method: GET
+  register: registry_check
+  until: registry_check.status == 200
+  retries: 10
+  delay: 15
+
+- name: Set kubectl context to kind
+  command: kubectl config use-context kind-kind
+  changed_when: false

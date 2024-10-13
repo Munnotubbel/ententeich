@@ -1,0 +1,6 @@
+resources:
+  - ../../base/
+
+images:
+  - name: registry:5000/backente:<patched>
+    newTag: IMAGE_TAG

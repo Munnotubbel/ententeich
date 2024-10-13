@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontente-ingress
+  annotations:
+    kubernetes.io/ingress.provider: nginx
+spec:
+  ingressClassName: gitlab-nginx
+  rules:
+  - host: frontente.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontente
+            port:
+              number: 80

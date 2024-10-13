@@ -1,0 +1,25 @@
+- name: Get hostname of local machine
+  command: hostname
+  register: hostname_result
+  changed_when: false
+
+- name: Set hostname fact
+  set_fact:
+    local_hostname: "{{ hostname_result.stdout }}"
+
+- name: Display important project links
+  debug:
+    msg: |
+      ┌────────────────────────────────────────────────────────────────┐
+      │                    Your Project Links                          │
+      ├────────────────────────────────────────────────────────────────┤
+      │                                                                │
+      │  GitLab:        https://gitlab.{{ local_hostname }}                 │
+      │  Uptime Kuma:   https://kuma.{{ local_hostname }}                   │
+      │                                                                │
+      │  Frontend:                                                     │
+      │    - Dev:       https://frontend.dev.{{ local_hostname }}           │
+      │    - Staging:   https://frontend.stg.{{ local_hostname }}           │
+      │    - Production:https://frontend.prod.{{ local_hostname }}          │
+      │                                                                │
+      └────────────────────────────────────────────────────────────────┘

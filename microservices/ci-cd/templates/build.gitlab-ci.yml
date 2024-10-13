@@ -1,0 +1,35 @@
+.build:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-slim
+    entrypoint: [""]
+  script:
+    - export TIMESTAMP=$(date +%Y%m%d%H%M%S)
+    - echo $TIMESTAMP > build_timestamp.txt
+    - mkdir -p /kaniko/.docker
+    - echo ""
+    - /kaniko/executor 
+      --context "${CI_PROJECT_DIR}" 
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "registry:5000/${CI_PROJECT_NAME}:${TIMESTAMP}"
+      --insecure
+  artifacts:
+    paths:
+      - build_timestamp.txt
+  rules:
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+.build_merge_request:
+  stage: build
+  image: bitnami/minideb:latest
+  script:
+    - docker build -t registry:5000/$CI_PROJECT_NAME:$CI_COMMIT_SHA -t registry:5000/$CI_PROJECT_NAME:$TIMESTAMP .
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+
+build:
+  extends: .build
+
+build_merge_request:
+  extends: .build_merge_request

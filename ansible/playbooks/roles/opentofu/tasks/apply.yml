@@ -1,0 +1,169 @@
+---
+- name: Check Kubernetes configuration
+  command: kubectl config view --raw
+  register: kube_config
+  changed_when: false
+
+- name: Display Kubernetes configuration
+  debug:
+    var: kube_config.stdout_lines
+
+- name: Verify Kubernetes connection
+  command: kubectl get nodes
+  changed_when: false
+
+- name: Wait for Kubernetes API to be ready
+  command: kubectl get --raw='/readyz?verbose'
+  register: result
+  until: result.rc == 0
+  retries: 60
+  delay: 5
+  changed_when: false
+
+- name: Check if OpenTofu is initialized for GitLab setup
+  stat:
+    path: "{{ playbook_dir }}/../../opentofu/setup_gitlab/.terraform"
+  register: tofu_gitlab_init_check
+
+- name: Initialize OpenTofu for GitLab setup if needed
+  command: tofu init
+  args:
+    chdir: "{{ playbook_dir }}/../../opentofu/setup_gitlab"
+  when: not tofu_gitlab_init_check.stat.exists
+
+- name: Apply OpenTofu GitLab Setup
+  command: tofu apply -auto-approve
+  args:
+    chdir: "{{ playbook_dir }}/../../opentofu/setup_gitlab"
+  environment:
+    KUBE_CONFIG_PATH: "~/.kube/config"
+    KUBECONFIG: "~/.kube/config"
+  register: tofu_apply
+  changed_when: "'Apply complete!' in tofu_apply.stdout"
+
+- name: Display OpenTofu GitLab setup output
+  debug:
+    var: tofu_apply.stdout_lines
+
+- name: Get hostname of local machine
+  command: hostname
+  register: hostname_result
+  changed_when: false
+
+- name: Set local hostname fact
+  set_fact:
+    local_hostname: "{{ hostname_result.stdout }}"
+
+- name: Wait for GitLab to be accessible
+  uri:
+    url: "https://gitlab.{{ local_hostname }}"
+    validate_certs: no
+  register: gitlab_check
+  until: gitlab_check.status in [200, 301, 302]
+  retries: 30
+  delay: 20
+
+- name: Check if OpenTofu is initialized
+  stat:
+    path: "{{ playbook_dir }}/../../opentofu/configure_ressources/.terraform"
+  register: tofu_init_check
+
+- name: Initialize OpenTofu if not already initialized
+  command: tofu init
+  args:
+    chdir: "{{ playbook_dir }}/../../opentofu/configure_ressources"
+  when: not tofu_init_check.stat.exists
+
+
+
+- name: Get and decode GitLab initial root password
+  block:
+    - name: Wait for GitLab initial root password secret to be created
+      command: kubectl get secret gitlab-gitlab-initial-root-password -n gitlab
+      register: gitlab_secret_check
+      until: gitlab_secret_check.rc == 0 
+      retries: 5
+      delay: 10
+
+    - name: Retrieve GitLab initial root password secret with kubectl
+      command: kubectl get secret gitlab-gitlab-initial-root-password -n gitlab -o jsonpath='{.data.password}'
+      register: gitlab_secret_output
+
+    - name: Decode GitLab initial root password
+      set_fact:
+        gitlab_initial_password: "{{ gitlab_secret_output.stdout | b64decode }}"
+
+    - name: Display GitLab login information
+      debug:
+        msg: |
+          --- GitLab Login Information ---
+
+          URL:      https://gitlab.{{ local_hostname }}
+
+          Username: root
+
+          Password: {{ gitlab_initial_password }}
+
+          --------------------------------
+          IMPORTANT: Please change this password immediately after logging in!
+
+- name: Display GitLab Personal Access Token instructions
+  debug:
+    msg: |
+      --- Create GitLab Personal Access Token ---
+
+      1. Log in to GitLab using the credentials provided above.
+
+      2. Navigate to: https://gitlab.{{ local_hostname }}/-/profile/personal_access_tokens
+
+      3. Create a new token with the following scopes:
+      
+         • api (Full API access)
+         • read_repository (Read repository)
+         • write_repository (Write repository)
+         • read_registry (Read Container Registry)
+         • write_registry (Write Container Registry)
+
+      4. Copy the generated token and keep it secure.
+
+      --------------------------------------------
+      NOTE: This token will be used for further GitLab operations.
+
+- name: Prompt for GitLab Personal Access Token
+  pause:
+    prompt: "Please enter your GitLab Personal Access Token"
+  register: gitlab_token_input
+
+- name: Set GitLab token fact
+  set_fact:
+    gitlab_token: "{{ gitlab_token_input.user_input }}"
+
+- name: Check if OpenTofu is initialized for GitLab resources configuration
+  stat:
+    path: "{{ playbook_dir }}/../../opentofu/configure_ressources/.terraform"
+  register: tofu_resources_init_check
+
+- name: Initialize OpenTofu for GitLab resources configuration if needed
+  command: tofu init
+  args:
+    chdir: "{{ playbook_dir }}/../../opentofu/configure_ressources"
+  when: not tofu_resources_init_check.stat.exists
+
+- name: Apply OpenTofu GitLab resources configuration
+  command: tofu apply -auto-approve -var="gitlab_token={{ gitlab_token }}"
+  args:
+    chdir: "{{ playbook_dir }}/../../opentofu/configure_ressources"
+  environment:
+    KUBE_CONFIG_PATH: "~/.kube/config"
+    KUBECONFIG: "~/.kube/config"
+  register: tofu_resources_apply
+  changed_when: "'Apply complete!' in tofu_resources_apply.stdout"
+
+- name: Display OpenTofu GitLab resources apply output
+  debug:
+    var: tofu_resources_apply.stdout_lines
+
+- name: Check for OpenTofu apply errors
+  fail:
+    msg: "OpenTofu apply failed. Please check the output above for details."
+  when: tofu_resources_apply.rc != 0
