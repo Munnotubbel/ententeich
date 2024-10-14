@@ -13,10 +13,24 @@ terraform {
 
 locals {
   namespaces = ["gitlab", "gitlab-runner", "dev", "stg", "prod", "monitoring"]
+  creating   = ["dev", "stg", "prod", "monitoring"]
 }
 
 
+resource "kubernetes_namespace" "environments" {
+  for_each = toset(local.creating)
+
+  metadata {
+    name = each.key
+  }
+
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
 resource "kubernetes_deployment" "uptime_kuma" {
+  depends_on = [kubernetes_namespace.environments]
   metadata {
     name      = "uptime-kuma"
     namespace = "monitoring"
@@ -63,6 +77,7 @@ resource "kubernetes_deployment" "uptime_kuma" {
 }
 
 resource "kubernetes_service" "uptime_kuma" {
+  depends_on = [kubernetes_namespace.environments]
   metadata {
     name      = "uptime-kuma"
     namespace = "monitoring"
@@ -83,6 +98,7 @@ resource "kubernetes_service" "uptime_kuma" {
 }
 
 resource "kubernetes_ingress_v1" "uptime_kuma" {
+  depends_on = [kubernetes_namespace.environments]
   metadata {
     name      = "uptime-kuma-ingress"
     namespace = "monitoring" 
@@ -125,6 +141,7 @@ resource "kubernetes_ingress_v1" "uptime_kuma" {
 
 
 resource "kubernetes_network_policy" "allow_all" {
+  depends_on = [kubernetes_namespace.environments]
   for_each = toset(local.namespaces)
 
   metadata {

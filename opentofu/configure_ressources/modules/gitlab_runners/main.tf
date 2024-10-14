@@ -24,90 +24,8 @@
     }
   }
 
-locals {
-  creating   = ["dev", "stg", "prod", "monitoring"]
-}
-
-resource "kubernetes_namespace" "environments" {
-  for_each = toset(local.creating)
-
-  metadata {
-    name = each.key
-  }
-
-  lifecycle {
-    prevent_destroy = false
-  }
-}
-
-  resource "kubernetes_network_policy" "allow_gitlab_runner" {
-  metadata {
-    name      = "allow-gitlab-runner"
-    namespace = "gitlab"
-  }
-
-  spec {
-    pod_selector {}
-
-    ingress {
-      from {
-        namespace_selector {
-          match_labels = {
-            name = "gitlab-runner"
-          }
-        }
-      }
-    }
-
-    egress {
-      to {
-        namespace_selector {
-          match_labels = {
-            name = "gitlab-runner"
-          }
-        }
-      }
-    }
-
-    policy_types = ["Ingress", "Egress"]
-  }
-}
-
-  resource "kubernetes_network_policy" "allow_gitlab" {
-    metadata {
-      name      = "allow-gitlab"
-      namespace = "gitlab-runner"
-    }
-
-    spec {
-      pod_selector {}
-
-      ingress {
-        from {
-          namespace_selector {
-            match_labels = {
-              name = "gitlab"
-            }
-          }
-        }
-      }
-
-      egress {
-        to {
-          namespace_selector {
-            match_labels = {
-              name = "gitlab"
-            }
-          }
-        }
-      }
-
-      policy_types = ["Ingress", "Egress"]
-    }
-  }
-
-
   resource "kubernetes_secret" "gitlab_runner_tls" {
+    depends_on = [kubernetes_namespace.gitlab_runner]
     metadata {
       name      = "gitlab-runner-tls"
       namespace = "gitlab-runner"
@@ -135,6 +53,7 @@ data "kubernetes_secret" "gitlab_runner_secret" {
 }
 
 resource "kubernetes_cluster_role_binding" "gitlab_runner_admin" {
+  depends_on = [kubernetes_namespace.gitlab_runner]
   metadata {
     name = "gitlab-runner-admin"
   }
@@ -153,6 +72,7 @@ resource "kubernetes_cluster_role_binding" "gitlab_runner_admin" {
 }
 
 resource "kubernetes_service_account" "gitlab_runner" {
+  depends_on = [kubernetes_namespace.gitlab_runner]
   metadata {
     name      = "gitlab-runner"
     namespace = "gitlab-runner"
@@ -165,6 +85,7 @@ locals {
 
 
   resource "helm_release" "gitlab_runner" {
+    depends_on = [kubernetes_namespace.gitlab_runner]
     name       = "gitlab-runner"
     repository = "https://charts.gitlab.io"
     chart      = "gitlab-runner"

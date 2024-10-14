@@ -22,6 +22,7 @@ resource "kubernetes_namespace" "gitlab" {
 
 
 resource "kubernetes_secret" "gitlab_postgresql_password" {
+  depends_on = [kubernetes_namespace.gitlab]
   metadata {
     name      = "gitlab-psql-pw"
     namespace = kubernetes_namespace.gitlab.metadata[0].name
@@ -32,6 +33,7 @@ resource "kubernetes_secret" "gitlab_postgresql_password" {
 }
 
 resource "kubernetes_secret" "gitlab_runner" {
+  depends_on = [kubernetes_namespace.gitlab]
   metadata {
     name      = "gitlab-runner"
     namespace = "gitlab"
@@ -45,6 +47,7 @@ resource "kubernetes_secret" "gitlab_runner" {
 }
 
 resource "helm_release" "gitlab" {
+  depends_on = [kubernetes_namespace.gitlab, kubernetes_secret.gitlab_postgresql_password]
   depends_on = [kubernetes_secret.gitlab_postgresql_password]
   name       = "gitlab"
   repository = "https://charts.gitlab.io"
