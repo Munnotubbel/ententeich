@@ -13,11 +13,10 @@ terraform {
 
 locals {
   namespaces = ["gitlab", "gitlab-runner", "dev", "stg", "prod", "monitoring"]
-  creating = ["dev", "stg", "prod","monitoring"]
+  creating = ["dev", "stg", "prod", "monitoring"]
 }
 
-
-resource "kubernetes_namespace" "environments" {
+resource "kubernetes_namespace_v1" "environments" {
   for_each = toset(local.creating)
 
   metadata {
@@ -29,7 +28,32 @@ resource "kubernetes_namespace" "environments" {
   }
 }
 
+resource "null_resource" "namespace_creation_check" {
+  for_each = kubernetes_namespace_v1.environments
 
+  triggers = {
+    namespace_name = each.value.metadata[0].name
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Checking namespace ${each.value.metadata[0].name}"
+      kubectl get namespace ${each.value.metadata[0].name} || (echo "Namespace ${each.value.metadata[0].name} not found" && exit 1)
+    EOT
+  }
+
+  depends_on = [kubernetes_namespace_v1.environments]
+}
+
+output "created_namespaces" {
+  value = [for ns in kubernetes_namespace_v1.environments : ns.metadata[0].name]
+  description = "List of namespaces that were created"
+}
+
+output "all_namespaces" {
+  value = local.namespaces
+  description = "List of all namespaces"
+}
 resource "kubernetes_deployment" "uptime_kuma" {
   metadata {
     name      = "uptime-kuma"
