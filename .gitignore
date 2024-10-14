@@ -8,3 +8,4 @@ opentofu/terraform*
 target/
 terraform.*
 package-lock.json
+.git

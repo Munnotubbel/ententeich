@@ -136,3 +136,62 @@
       register: kind_version
       changed_when: false
   when: kind_check.rc != 0
+
+- name: Check if snapd is available in repositories
+  command: "{{ ansible_pkg_mgr }} list snapd"
+  register: snapd_available
+  ignore_errors: yes
+  changed_when: false
+
+- name: Install EPEL repository if snapd is not available
+  become: yes
+  package:
+    name: epel-release
+    state: present
+  when: snapd_available.rc != 0
+
+- name: Ensure snapd is installed
+  become: yes
+  package:
+    name: snapd
+    state: present
+    update_cache: yes
+
+- name: Enable and start snapd service
+  become: yes
+  systemd:
+    name: snapd
+    enabled: yes
+    state: started
+
+- name: Ensure snap is up to date
+  become: yes
+  command: snap install core
+  changed_when: false
+
+- name: Check if k9s is already installed
+  command: which k9s
+  register: k9s_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Install k9s using snap in devmode
+  become: yes
+  command: snap install k9s --devmode
+  register: k9s_install
+  changed_when: k9s_install.rc == 0
+  when: k9s_check.rc != 0
+
+- name: Create symlink for k9s
+  become: yes
+  file:
+    src: /snap/k9s/current/bin/k9s
+    dest: /snap/bin/k9s
+    state: link
+  when: k9s_install.changed
+
+- name: Verify k9s installation
+  command: k9s version
+  register: k9s_version
+  changed_when: false
+  failed_when: k9s_version.rc != 0

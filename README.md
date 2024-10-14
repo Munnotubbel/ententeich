@@ -102,7 +102,7 @@ For those who love a pre-configured dashboard (and who doesn't?), we've got a tr
 Only a well-monitored duck is a happy duck! 🦆📊
 
 
-## 🕹️ Bonus Level: K9s
+## 🕹️ Bonus Level: K9s (Kubernetes Dashboard)
 
 ```bash
 k9s

@@ -99,3 +99,21 @@
       register: kind_version
       changed_when: false
   when: kind_check.rc != 0
+
+- name: Check if k9s is already installed
+  command: which k9s
+  register: k9s_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Download and install k9s
+  become: yes
+  shell: |
+    wget https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_linux_amd64.deb && 
+    apt install -y ./k9s_linux_amd64.deb && 
+    rm k9s_linux_amd64.deb
+  args:
+    warn: false
+  register: k9s_install
+  changed_when: k9s_install.rc == 0
+  when: k9s_check.rc != 0
