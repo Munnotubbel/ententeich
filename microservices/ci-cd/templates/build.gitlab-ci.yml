@@ -1,7 +1,7 @@
 .build:
   stage: build
   image:
-    name: gcr.io/kaniko-project/executor:v1.23.2-slim
+    name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
     - export TIMESTAMP=$(date +%Y%m%d%H%M%S)
