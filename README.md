@@ -75,6 +75,25 @@ https://gitlab.(your host-system name)
 ### 👀 Uptime Kuma Watchtower
 https://kuma.(your host-system name)
 
+Certainly! I'll add the information about the Uptime Kuma dashboard import to the documentation. Here's the updated version:
+
+
+### 👀 Uptime Kuma Watchtower
+https://kuma.(your host-system name)
+
+#### Importing Uptime Kuma Dashboard
+For those who love a pre-configured dashboard (and who doesn't?), we've got a treat for you!
+
+1. Navigate to your Uptime Kuma GUI
+2. Click on your user profile
+3. Go to Settings
+4. Find the Backup section
+5. Look for the `uptime-kuma-dashboard.json` file in your project root
+6. Import this JSON file and watch your dashboard spring to life!
+
+Remember, a well-monitored duck is a happy duck! 🦆📊
+
+
 ## 🕹️ Bonus Level: K9s
 
 ```bash
@@ -105,7 +124,7 @@ For microservices, Kuma, or GitLab runner throwing tantrums:
 ### Nuclear Option: The Great Reset
 When all else fails, summon the setup script from the beginning:
 ```
-./setup.sh
+./re-roll.sh
 ```
 Warning: This will create a new universe. Use with caution!
 

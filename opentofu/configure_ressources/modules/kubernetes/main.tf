@@ -106,13 +106,12 @@ resource "kubernetes_ingress_v1" "uptime_kuma" {
       "nginx.ingress.kubernetes.io/proxy-connect-timeout" = "15"
       "nginx.ingress.kubernetes.io/proxy-read-timeout"    = "600"
       "nginx.ingress.kubernetes.io/service-upstream"      = "true"
-      # Wenn Sie ein TLS-Zertifikat mit cert-manager verwenden möchten:
       # "cert-manager.io/issuer" = "your-issuer-name"
     }
   }
 
   spec {
-    ingress_class_name = "gitlab-nginx"  # Verwenden Sie die gleiche Ingress-Klasse wie bei GitLab
+    ingress_class_name = "gitlab-nginx"  
 
     rule {
       host = "kuma.${var.hostname}"
@@ -131,8 +130,6 @@ resource "kubernetes_ingress_v1" "uptime_kuma" {
         }
       }
     }
-
-    # Wenn Sie TLS verwenden möchten, fügen Sie den folgenden Block hinzu:
     # tls {
     #   hosts       = ["kuma.tubbel-top"]
     #   secret_name = "uptime-kuma-tls"

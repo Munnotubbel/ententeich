@@ -15,15 +15,6 @@
     }
   }
 
-  # --- for future authentication_flow after deprecation of the RegistrationToken ---
-  resource "gitlab_user_runner" "gitlab_runner" {
-    description = "Kubernetes GitLab Runner"
-    untagged = true
-    locked = false
-    access_level = "ref_protected"
-    runner_type = "instance_type"
-  }
-
   resource "kubernetes_namespace" "gitlab_runner" {
     metadata {
       name = var.namespace
@@ -103,7 +94,6 @@
   resource "kubernetes_secret" "gitlab_runner_tls" {
     metadata {
       name      = "gitlab-runner-tls"
-      # namespace = kubernetes_namespace.gitlab_runner.metadata[0].name
       namespace = "gitlab-runner"
     }
 
@@ -168,7 +158,6 @@ locals {
 
     set {
       name  = "gitlabUrl"
-      # value = "https://gitlab.${var.hostname}"
       value = "http://gitlab-webservice-default.gitlab.svc.cluster.local:8080"
     
     }
@@ -269,6 +258,22 @@ locals {
       EOT
     }
 
+    set {
+      name = "metrics.enabled"
+      value = true
+    }
+    
+     set {
+      name = "metrics.port"
+      value = 9252
+    }
+
+    set {
+      name = "service.enabled"
+      value = true
+    }
+
+
     dynamic "set" {
       for_each = var.additional_helm_values
       content {
@@ -278,29 +283,3 @@ locals {
     }
   }
 
-
-
-    # set {
-    #   name  = "rbac.rules[0].verbs"
-    #   value = "{get,list,watch,create,patch,update,delete}"
-    # }
-
-    # set {
-    #   name  = "rbac.rules[1].apiGroups"
-    #   value = "{\"\"}"
-    # }
-
-    # set {
-    #   name  = "rbac.rules[1].resources"
-    #   value = "{pods/exec}"
-    # }
-
-    # set {
-    #   name  = "rbac.rules[1].verbs"
-    #   value = "{create,patch,delete}"
-    # }
-
-    # set {
-    #   name  = "clusterWideAccess"
-    #   value = true
-    # }
