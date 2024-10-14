@@ -48,7 +48,6 @@ resource "kubernetes_secret" "gitlab_runner" {
 
 resource "helm_release" "gitlab" {
   depends_on = [kubernetes_namespace.gitlab, kubernetes_secret.gitlab_postgresql_password]
-  depends_on = [kubernetes_secret.gitlab_postgresql_password]
   name       = "gitlab"
   repository = "https://charts.gitlab.io"
   chart      = "gitlab"
