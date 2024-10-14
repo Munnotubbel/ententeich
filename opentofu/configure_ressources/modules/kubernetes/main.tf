@@ -11,21 +11,14 @@ terraform {
   }
 }
 
-variable "gitlab_deploy_token" {
-  description = "GitLab Deploy Token"
-  type        = string
-  sensitive   = true
-}
-
-variable "gitlab_agent_token" {
-  description = "GitLab Agent Token"
-  type        = string
-  sensitive   = true
+locals {
+  namespaces = ["gitlab", "gitlab-runner", "dev", "stg", "prod", "monitoring"]
+  creating = ["dev", "stg", "prod","monitoring"]
 }
 
 
 resource "kubernetes_namespace" "environments" {
-  for_each = toset(["dev", "stg", "prod", "monitoring", "gitlab-agent"])
+  for_each = toset(local.creating)
 
   metadata {
     name = each.key
@@ -36,10 +29,11 @@ resource "kubernetes_namespace" "environments" {
   }
 }
 
+
 resource "kubernetes_deployment" "uptime_kuma" {
   metadata {
     name      = "uptime-kuma"
-    namespace = kubernetes_namespace.environments["monitoring"].metadata[0].name
+    namespace = "monitoring"
   }
 
   spec {
@@ -85,7 +79,7 @@ resource "kubernetes_deployment" "uptime_kuma" {
 resource "kubernetes_service" "uptime_kuma" {
   metadata {
     name      = "uptime-kuma"
-    namespace = kubernetes_namespace.environments["monitoring"].metadata[0].name
+    namespace = "monitoring"
   }
 
   spec {
@@ -147,87 +141,34 @@ resource "kubernetes_ingress_v1" "uptime_kuma" {
 }
 
 
-resource "kubernetes_network_policy" "monitoring_egress" {
+resource "kubernetes_network_policy" "allow_all" {
+  for_each = toset(local.namespaces)
+
   metadata {
-    name      = "monitoring-egress"
-    namespace = "monitoring"
+    name      = "allow-all"
+    namespace = each.key
   }
 
   spec {
     pod_selector {}
-    policy_types = ["Egress"]
-    
-    egress {
-      to {
-        namespace_selector {
-          match_labels = {
-            "kubernetes.io/metadata.name" = "gitlab"
-          }
-        }
-      }
-      to {
-        namespace_selector {
-          match_labels = {
-            "kubernetes.io/metadata.name" = "gitlab-runner"
-          }
-        }
-      }
-      to {
-        namespace_selector {
-          match_labels = {
-            "kubernetes.io/metadata.name" = "dev"
-          }
-        }
-      }
-      to {
-        namespace_selector {
-          match_labels = {
-            "kubernetes.io/metadata.name" = "stg"
-          }
-        }
-      }
-      to {
-        namespace_selector {
-          match_labels = {
-            "kubernetes.io/metadata.name" = "prod"
-          }
-        }
-      }
-    }
-  }
-}
-
-locals {
-  namespaces = ["gitlab", "gitlab-runner", "dev", "stg", "prod"]
-}
-
-resource "kubernetes_network_policy" "allow_monitoring_ingress" {
-  count = length(local.namespaces)
-
-  metadata {
-    name      = "allow-monitoring-ingress"
-    namespace = local.namespaces[count.index]
-  }
-
-  spec {
-    pod_selector {}
-    policy_types = ["Ingress"]
+    policy_types = ["Ingress", "Egress"]
     
     ingress {
       from {
-        namespace_selector {
-          match_labels = {
-            "kubernetes.io/metadata.name" = "monitoring"
-          }
-        }
+        namespace_selector {}
+      }
+    }
+
+    egress {
+      to {
+        namespace_selector {}
       }
     }
   }
 }
 
-
 output "kubernetes_namespaces" {
-  value = [for ns in kubernetes_namespace.environments : ns.metadata[0].name]
+  value = [for ns in local.namespaces : ns]
 }
 
 output "uptime_kuma_url" {

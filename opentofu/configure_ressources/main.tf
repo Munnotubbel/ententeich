@@ -77,8 +77,6 @@ module "gitlab_structure" {
 
 module "kubernetes" {
   source              = "./modules/kubernetes"
-  gitlab_deploy_token = module.gitlab_structure.deploy_token
-  gitlab_agent_token  = module.gitlab_structure.gitlab_agent_token
   gitlab_url          = local.gitlab_url
   hostname = local.hostname
   ssh_public_key = local.ssh_public_key
