@@ -67,22 +67,6 @@ module "gitlab_setup" {
   }
 }
 
-locals {
-  namespaces = ["gitlab", "gitlab-runner", "dev", "stg", "prod", "monitoring"]
-  creating = ["dev", "stg", "prod", "monitoring"]
-}
-
-resource "kubernetes_namespace_v1" "environments" {
-  for_each = toset(local.creating)
-
-  metadata {
-    name = each.key
-  }
-
-  lifecycle {
-    prevent_destroy = false
-  }
-}
 
 output "your_gitlab_url" {
   value = module.gitlab_setup.final_gitlab_url

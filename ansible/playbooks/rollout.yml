@@ -1,33 +1,33 @@
----
-- name: Setup development environment
-  hosts: localhost
-  become: yes
-  become_method: su
-  become_exe: sudo su -
+# ---
+# - name: Setup development environment
+#   hosts: localhost
+#   become: yes
+#   become_method: su
+#   become_exe: sudo su -
 
 
-  pre_tasks:
-    - include_tasks: "tasks/{{ ansible_os_family | lower }}.yml"
-      when: ansible_os_family | lower in ['darwin', 'debian', 'redhat']
+#   pre_tasks:
+#     - include_tasks: "tasks/{{ ansible_os_family | lower }}.yml"
+#       when: ansible_os_family | lower in ['darwin', 'debian', 'redhat']
 
-  roles:
-    - common
-    - docker
-    - opentofu
+#   roles:
+#     - common
+#     - docker
+#     - opentofu
 
-- name: Setup Kind
-  hosts: localhost
-  become: no
+# - name: Setup Kind
+#   hosts: localhost
+#   become: no
 
-  roles:
-    - kind
+#   roles:
+#     - kind
 
 
-  handlers:
-    - name: Restart Docker
-      service:
-        name: docker
-        state: restarted
+#   handlers:
+#     - name: Restart Docker
+#       service:
+#         name: docker
+#         state: restarted
 
 
 - name: Apply OpenTofu configurations

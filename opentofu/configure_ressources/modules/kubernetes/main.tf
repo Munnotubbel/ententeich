@@ -13,36 +13,8 @@ terraform {
 
 locals {
   namespaces = ["gitlab", "gitlab-runner", "dev", "stg", "prod", "monitoring"]
-  creating   = ["dev", "stg", "prod", "monitoring"]
 }
 
-resource "kubernetes_namespace" "environments" {
-  for_each = toset(local.creating)
-
-  metadata {
-    name = each.key
-  }
-
-  lifecycle {
-    prevent_destroy = false
-  }
-}
-
-resource "time_sleep" "wait_for_namespaces" {
-  depends_on = [kubernetes_namespace.environments]
-
-  create_duration = "6s"
-}
-
-data "kubernetes_namespace" "verify_namespaces" {
-  for_each = toset(local.creating)
-
-  metadata {
-    name = each.key
-  }
-
-  depends_on = [time_sleep.wait_for_namespaces]
-}
 
 resource "kubernetes_deployment" "uptime_kuma" {
   metadata {

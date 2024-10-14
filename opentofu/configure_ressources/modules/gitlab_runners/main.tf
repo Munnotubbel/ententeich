@@ -24,6 +24,22 @@
     }
   }
 
+locals {
+  creating   = ["dev", "stg", "prod", "monitoring"]
+}
+
+resource "kubernetes_namespace" "environments" {
+  for_each = toset(local.creating)
+
+  metadata {
+    name = each.key
+  }
+
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
   resource "kubernetes_network_policy" "allow_gitlab_runner" {
   metadata {
     name      = "allow-gitlab-runner"
