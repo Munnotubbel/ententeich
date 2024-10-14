@@ -13,6 +13,7 @@
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
       --destination "registry:5000/${CI_PROJECT_NAME}:${TIMESTAMP}"
       --insecure
+      --ignore-path=/product_uuid
   artifacts:
     paths:
       - build_timestamp.txt
