@@ -2,11 +2,8 @@
 .deploy:
   image: bitnami/kubectl:latest
   script:
-    - kubectl config get-contexts
-    - kubectl cluster-info
     - cd $CI_PROJECT_DIR/k8s/cluster/${CI_ENVIRONMENT_NAME}
-    - sed -i "s/IMAGE_TAG/\"$DATE_TAG\"/g" kustomization.yml
-    - cat kustomization.yml
+    - sed -i "s/IMAGE_TAG/\"$CI_PIPELINE_ID\"/g" kustomization.yml
     - kubectl apply -k . -n ${KUBERNETES_NAMESPACE}
   dependencies:
     - build
