@@ -17,13 +17,6 @@ variable "gitlab_token" {
   sensitive   = true
 }
 
-variable "runner_token" {
-  description = "GitLab Runner Registration Token"
-  type        = string
-  sensitive   = true
-}
-
-
 variable "concurrent_runners" {
   description = "The number of concurrent runners"
   type        = number

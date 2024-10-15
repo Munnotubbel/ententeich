@@ -8,6 +8,10 @@ terraform {
       source  = "opentofu/helm"
       version = "~> 2.15.0"
     }
+    gitlab = {
+      source  = "opentofu/gitlab"
+      version = "~> 17.4.0"
+    }
   }
 }
 
@@ -28,19 +32,6 @@ resource "kubernetes_namespace" "environments" {
     prevent_destroy = false
   }
 }
-
-resource "null_resource" "add_certificates" {
-  provisioner "local-exec" {
-    command = <<EOT
-      for node in $(kind get nodes); do
-        kubectl get secret gitlab-registry-tls -n gitlab -o jsonpath="{.data['tls\.crt']}" | base64 --decode > registry.crt
-        docker cp registry.crt $node:/usr/local/share/ca-certificates/
-        docker exec $node update-ca-certificates
-      done
-    EOT
-  }
-}
-
 
 resource "kubernetes_deployment" "uptime_kuma" {
   depends_on = [kubernetes_namespace.environments]
@@ -121,7 +112,6 @@ resource "kubernetes_ingress_v1" "uptime_kuma" {
       "nginx.ingress.kubernetes.io/proxy-connect-timeout" = "15"
       "nginx.ingress.kubernetes.io/proxy-read-timeout"    = "600"
       "nginx.ingress.kubernetes.io/service-upstream"      = "true"
-      # "cert-manager.io/issuer" = "your-issuer-name"
     }
   }
 
@@ -145,10 +135,6 @@ resource "kubernetes_ingress_v1" "uptime_kuma" {
         }
       }
     }
-    # tls {
-    #   hosts       = ["kuma.tubbel-top"]
-    #   secret_name = "uptime-kuma-tls"
-    # }
   }
 }
 
@@ -193,7 +179,7 @@ data "kubernetes_secret" "gitlab_registry_secret" {
   }
 }
 
-resource "kubernetes_secret" "copied_secrets" {
+resource "kubernetes_secret" "copied_registry_secrets" {
   depends_on = [kubernetes_namespace.environments]
   for_each = toset(local.target_namespaces)
 
@@ -206,6 +192,49 @@ resource "kubernetes_secret" "copied_secrets" {
 
   type = data.kubernetes_secret.gitlab_registry_secret.type
 }
+
+data "gitlab_user" "registry_user" {
+  username = "root" 
+}
+
+
+resource "gitlab_personal_access_token" "registry_token" {
+  user_id = local.registry_user
+  name        = "Container Registry Token"
+  expires_at = formatdate("YYYY-MM-DD", timeadd(timestamp(), "8760h"))
+  scopes      = ["read_registry"]
+}
+
+locals {
+  registry_user = data.gitlab_user.registry_user.id
+  token_value   = coalesce(gitlab_personal_access_token.registry_token.token, "")
+}
+
+
+resource "kubernetes_secret" "gitlab_imagepullsecret" {
+  for_each = toset(local.target_namespaces)
+  depends_on = [kubernetes_namespace.environments, gitlab_personal_access_token.registry_token]
+
+  metadata {
+    name      = "gitlab-imagepullsecret"
+    namespace = each.key
+  }
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "registry.${var.hostname}" = {
+          username = "root",
+          password = gitlab_personal_access_token.registry_token.token,
+          auth     = base64encode(join(":", ["root", gitlab_personal_access_token.registry_token.token]))
+        }
+      }
+    })
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+}
+
 
 output "kubernetes_namespaces" {
   value = [for ns in local.namespaces : ns]

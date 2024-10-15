@@ -14,8 +14,13 @@ async fn health_check() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
+        let cors = Cors::permissive() 
+            .allowed_origin("http://frontente")
+            .allowed_methods(vec!["GET", "POST", "OPTIONS"])
+            .allowed_headers(vec!["Content-Type"])
+            .max_age(3600);
         App::new()
-            .wrap(Cors::permissive())
+            .wrap(cors)
             .service(hello)
             .service(health_check)
     })

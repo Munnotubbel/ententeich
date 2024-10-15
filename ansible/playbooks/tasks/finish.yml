@@ -1,3 +1,4 @@
+---
 - name: Get hostname of local machine
   command: hostname
   register: hostname_result
@@ -14,12 +15,12 @@
       │                    Your Project Links                          │
       ├────────────────────────────────────────────────────────────────┤
       │                                                                │
-      │  GitLab:        https://gitlab.{{ local_hostname }}                 │
-      │  Uptime Kuma:   https://kuma.{{ local_hostname }}                   │
+      │  GitLab:        http://gitlab.{{ local_hostname }}                      │
+      │  Uptime Kuma:   https://kuma.{{ local_hostname }}                       │
       │                                                                │
       │  Frontend:                                                     │
-      │    - Dev:       https://frontend.dev.{{ local_hostname }}           │
-      │    - Staging:   https://frontend.stg.{{ local_hostname }}           │
-      │    - Production:https://frontend.prod.{{ local_hostname }}          │
+      │    - Dev:       http://frontend.dev.{{ local_hostname }}                │
+      │    - Staging:   http://frontend.stg.{{ local_hostname }}                │
+      │    - Production:http://frontend.prod.{{ local_hostname }}               │
       │                                                                │
       └────────────────────────────────────────────────────────────────┘

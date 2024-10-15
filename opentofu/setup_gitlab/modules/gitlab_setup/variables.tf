@@ -23,9 +23,3 @@ variable "chart_version" {
   type        = string
   default     = "8.4.2"
 }
-
-variable "runner_token" {
-  description = "GitLab Runner Registration Token"
-  type        = string
-  sensitive   = true
-}

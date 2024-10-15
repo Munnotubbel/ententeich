@@ -12,10 +12,10 @@ spec:
       labels:
         app: frontente
     spec:
+      imagePullSecrets:
+        - name: gitlab-imagepullsecret 
       containers:
       - name: frontente
-        image: gitlab-registry.gitlab.svc.cluster.local:5000/ententeich/frontente:<patched>
+        image: registry.tubbel-top/ententeich/frontente:<patched>
         ports:
         - containerPort: 80
-      imagePullSecrets:
-        - name: gitlab-registry-secret

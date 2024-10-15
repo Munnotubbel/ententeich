@@ -13,7 +13,7 @@ terraform {
 
 
 output "gitlab_hostname" {
-  value = "https://gitlab.${coalesce(var.hostname, "http://localhost")}"
+  value = "http://gitlab.${coalesce(var.hostname, "http://localhost")}"
 }
 
 
@@ -60,6 +60,14 @@ resource "gitlab_deploy_token" "ci_cd_token" {
 resource "gitlab_project_variable" "ci_cd_token" {
   project   = gitlab_project.microservices["ci-cd"].id
   key       = "CI_CD_TOKEN"
+  value     = gitlab_deploy_token.ci_cd_token.token
+  protected = false
+  masked    = false
+}
+
+resource "gitlab_project_variable" "hostname" {
+  project   = gitlab_project.microservices["ci-cd"].id
+  key       = "MY_HOSTNAME"
   value     = gitlab_deploy_token.ci_cd_token.token
   protected = false
   masked    = false

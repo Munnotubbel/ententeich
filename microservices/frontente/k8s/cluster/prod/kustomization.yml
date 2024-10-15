@@ -13,5 +13,5 @@ patches:
         value: frontente.prod
 
 images:
-  - name: gitlab-registry.gitlab.svc.cluster.local:5000/ententeich/frontente:<patched>
+  - name: registry.tubbel-top/ententeich/frontente:<patched>
     newTag: IMAGE_TAG

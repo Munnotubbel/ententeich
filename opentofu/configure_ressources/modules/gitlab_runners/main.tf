@@ -24,28 +24,6 @@
     }
   }
 
-  resource "kubernetes_secret" "gitlab_runner_tls" {
-    depends_on = [kubernetes_namespace.gitlab_runner]
-    metadata {
-      name      = "gitlab-runner-tls"
-      namespace = "gitlab-runner"
-    }
-
-    data = {
-      "gitlab.crt" = data.kubernetes_secret.gitlab_tls.data["tls.crt"]
-    }
-
-    type = "Opaque"
-  }
-
-  data "kubernetes_secret" "gitlab_tls" {
-    metadata {
-      name      = "gitlab-gitlab-tls"
-      namespace = "gitlab"
-    }
-  }
-
-
 resource "kubernetes_cluster_role_binding" "gitlab_runner_admin" {
   depends_on = [kubernetes_namespace.gitlab_runner]
   metadata {
@@ -183,11 +161,6 @@ resource "kubernetes_secret" "gitlab_runner_secret_copy" {
       value = "600m"
     }
 
-    set {
-      name  = "certsSecretName"
-      value = "gitlab-runner-tls"
-    }
-
 
 set {
   name  = "runners.config"
@@ -200,13 +173,8 @@ set {
       service_account = "gitlab-runner"
       [runners.kubernetes.volumes]
         [[runners.kubernetes.volumes.secret]]
-          name = "${kubernetes_secret.gitlab_runner_tls.metadata[0].name}"
-          mount_path = "/etc/gitlab-runner/certs/"
-        [[runners.kubernetes.volumes.secret]]
           name = "gitlab-gitlab-runner-secret"
           mount_path = "/secrets"
-      [runners.tls]
-        ca_file = "/etc/gitlab-runner/certs/gitlab.crt"
       [runners.custom_build_dir]
       [runners.cache]
         [runners.cache.s3]

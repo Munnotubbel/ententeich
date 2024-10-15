@@ -2,5 +2,5 @@ resources:
   - ../../base/
 
 images:
-  - name: gitlab-registry.gitlab.svc.cluster.local:5000/ententeich/backente:<patched>
+  - name: registry.tubbel-top/ententeich/backente:<patched>
     newTag: IMAGE_TAG

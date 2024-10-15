@@ -1,143 +1,87 @@
-Here's the updated version of the documentation with the additional information:
+Certainly. Here's a more formal, factual, and technically correct version of the documentation:
 
-# 🦆 The Ententeich Microservices Playground! 🎭
+# Ententeich Microservices Project Documentation
 
-## 🚀 Kickstarting Your Duck-tastic Adventure
+## Project Overview
 
-### 🔥 The Big Bang: `setup.sh`
+The Ententeich Microservices Project is a comprehensive local Kubernetes environment designed for software development, testing, CI/CD pipeline implementation, and Kubernetes tool exploration. This project utilizes Kind (Kubernetes in Docker) for cluster management, GitLab for version control and CI/CD, and incorporates various microservices.
 
-```bash
-cd scripts
-./setup.sh
-```
+## Key Components
 
-**WARNING: This script is hotter than a supernova! It'll ignite your entire development universe!**
+### Infrastructure
 
-## 🎬 The Ententeich Saga: A Five-Act Play
+1. **Kind Kubernetes Cluster**
+   - Version: v0.20.0
+   - Configuration: Single-node cluster (control plane acts as worker node)
+   - Ingress Controller: NGINX (pre-installed)
 
-### Act I: The Ansible Overture 🎼
-Our Ansible playbook, the unsung hero, installs software faster than you can say "YAML ain't markup language".
+2. **Docker Registry**
+   - Type: Local registry in Docker container
+   - Address: localhost:5000 (external), registry:5000 (internal)
+   - Purpose: Storage and management of Docker images for microservices
 
-### Act II: Terraform's Grand Ballet 💃
-Terraform pirouettes onto the stage, deploying GitLab, GitLab Runner, and Uptime Kuma in a mesmerizing dance of containers.
+3. **GitLab**
+   - Deployment: Via Helm Chart in Kind cluster
+   - Version: 17.4.2 (GitLab), Helm Chart version 8.4.2
+   - Components: GitLab Core, GitLab Shell, Gitaly, Registry, NGINX Ingress Controller, Redis, PostgreSQL
+   - URL: https://gitlab.(host-system name)
 
-### Act III: Ansible's Encore 🎭
-Ansible returns, pushing test code and sprouting Git branches like a caffeinated octopus.
+### Microservices
 
-### Act IV: The CI/CD Symphony 🎶
-GitLab pipelines spring to life, a cascading waterfall of builds, tests deployments for each environment.
+1. Backend Service ("Backente")
+2. Frontend Service ("Frontente")
+3. CI/CD Configuration Repository
 
-### Act V: The Kubernetes Crescendo 🌟
-Our apps make their grand debut in Kubernetes, ready to takeoff!
+### Tools
 
-Absolutely! Let's jazz up that port overview with some humor and flair:
+- Uptime Kuma for monitoring
+- Terraform/OpenTofu for Infrastructure as Code
+- Ansible for configuration management
+- Kustomize for Kubernetes manifest management
 
-## 🚢 PORTs-al to Another Dimension: The Great Container Gateway Extravaganza!
+## Deployment Process
 
-Ahoy, brave container captains! Prepare to navigate the treacherous waters of our magnificent port system. Here's your treasure map to the secret passages between our Docker realms:
+1. Initiation: Execute `setup.sh` script in the `scripts` folder
+2. Software Installation: Ansible playbook installs necessary software on the host machine
+3. Container Setup: Kind is configured in a Docker container
+4. GitLab Deployment: Terraform/OpenTofu deploys GitLab, GitLab Runner, and Uptime Kuma into the cluster
+5. Repository Setup: Ansible pushes test code to GitLab repositories and creates development and staging branches
+6. CI/CD Execution: GitLab pipelines run for each environment, deploying applications to Kubernetes
 
-### 🏰 KIND Kingdom (Kubernetes Cluster Fortress)
+## Project Structure
 
-**External Portals (For Mere Mortals on the Host Machine)**
-- 🌐 8080: The HTTP Highway (secretly leads to container's 80)
-- 🔒 8443: The HTTPS Hideout (sneakily connected to container's 443)
-- 🎛️ 34597: The Kubernetes Control Tower (linked to the mysterious 6443)
+- `/ansible`: Ansible playbooks and configurations
+- `/microservices`: Contains backend, frontend, and CI/CD configuration
+- `/opentofu`: Terraform/OpenTofu configurations for GitLab and Kubernetes resources
+- `/scripts`: Setup and utility scripts
 
-**Internal Passages (For Container Creatures Only)**
-- 🚪 80: The HTTP Hallway
-- 🔐 443: The HTTPS Hideaway
-- 🗝️ 6443: The Kubernetes Secret Chamber
+## Networking
 
-### 🏴‍☠️ REGISTRY Realm (Docker's Image Treasure Chest)
+- GitLab UI: http://gitlab.(host-system name)
+- Uptime Kuma: https://kuma.(host-system name)
+- Frontend:
+  - Development: http://frontente.dev
+  - Staging: http://frontente.stg
+  - Production: http://frontente.prod
 
-**External Gateway (Host Machine's Secret Entrance)**
-- 💎 5000: The Docker Registry Jewel Vault
+## Security Considerations
 
-**Internal Vault (Where Images Go to Party)**
-- 🎭 5000: The Registry's VIP Lounge
+- Current implementation lacks encryption for data traffic
+- Docker pushes and pulls are not secured
+- Uptime Kuma use self-signed certificates
 
-### 📜 Legendary Lore (Additional Notes for the Curious)
+## Development Environments
 
-- The Kind Kingdom is a magical place where Kubernetes creatures roam free, accessible through mystical HTTP, HTTPS, and API portals.
-- The Registry Realm is an independent island, guarding precious Docker image treasures.
-- Both realms are connected by an invisible bridge (Docker network), allowing secret messages to pass between them.
-- External portals are like magic mirrors, allowing outsiders to peek into our container world.
-- Internal passages are the true paths of power, known only to the initiated container dwellers.
+Three distinct environments are configured:
+1. Development (dev)
+2. Staging (stg)
+3. Production (prod)
 
-## 🎨 The Three Realms of Ententeich
+## CI/CD Configuration
 
-1. 🌱 Dev: Where code goes to grow
-2. 🌼 Staging: The dress rehearsal
-3. 🌳 Production: The big leagues!
+The CI/CD repository contains pipeline configurations and templates for deploying the frontend and backende example service. Kustomize is utilized for environment-specific application configurations.
 
-## 🔗 Portals to the Ententeich Universe
+## Monitoring
 
-### 🖥️ Frontend Gateways
-- Dev: http://frontente.dev
-- Staging: http://frontente.stg
-- Prod: http://frontente.prod
+K9s is installed for cluster monitoring and can be accessed via the `k9s` command in the terminal.
 
-### 🦊 GitLab Lair
-https://gitlab.(your host-system name)
-
-### 👀 Uptime Kuma Watchtower
-https://kuma.(your host-system name)
-
-Certainly! I'll add the information about the Uptime Kuma dashboard import to the documentation. Here's the updated version:
-
-
-### 👀 Uptime Kuma Watchtower
-https://kuma.(your host-system name)
-
-#### Importing Uptime Kuma Dashboard
-For those who love a pre-configured dashboard (and who doesn't?), we've got a treat for you!
-
-1. Navigate to your Uptime Kuma GUI
-2. Click on your user profile
-3. Go to Settings
-4. Find the Backup section
-5. Look for the `uptime-kuma-dashboard.json` file in your project root
-6. Import this JSON file and watch your dashboard spring to life!
-
-Only a well-monitored duck is a happy duck! 🦆📊
-
-
-## 🕹️ Bonus Level: K9s (Kubernetes Dashboard)
-
-```bash
-k9s
-```
-Unleash the power of K9s and navigate your Kubernetes cluster like a boss!
-
-## 🚨 Troubleshooting: When Ducks Go Rogue
-
-### GitLab Deployment Issues
-If GitLab refuses to play nice:
-1. Waddle over to `opentofu/gitlab_setup`
-2. Execute the secret duck dance:
-   ```
-   tofu destroy
-   tofu apply
-   ```
-
-### Kubernetes-Hosted Services Acting Up
-For microservices, Kuma, or GitLab runner throwing tantrums:
-1. Navigate to `opentofu/configure_ressources`
-2. Perform the ritual of rebirth:
-   ```
-   tofu destroy
-   tofu apply
-   ```
-
-### Nuclear Option: The Great Reset
-When all else fails, summon the setup script from the beginning:
-```
-./re-roll.sh
-```
-Warning: This will create a new universe. Use with caution!
-
-## 🎭 In Conclusion
-
-Welcome to Ententeich, where microservices swim freely, CI/CD pipelines flow like rivers, and Kubernetes clusters grow like wild reeds. May your containers be light, your deployments swift, and your ducks always in a row!
-
-Remember, in Ententeich, we don't just deploy code - we set it free to conquer the digital wilderness! And when things go south, we're not afraid to ruffle a few feathers to get everything back in order. 🦆🚀🌈

@@ -3,7 +3,7 @@ WORKDIR /usr/src/backente
 COPY . .
 RUN cargo build --release
 
-FROM debian:buster-slim
+FROM debian:bookworm-slim
 COPY --from=builder /usr/src/backente/target/release/backente /usr/local/bin/backente
 EXPOSE 8080
 CMD ["backente"]

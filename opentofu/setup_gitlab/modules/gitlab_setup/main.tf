@@ -94,7 +94,7 @@ resource "helm_release" "gitlab" {
 
   set {
     name  = "postgresql.install"
-    value = "true"
+    value = true
   }
 
   set {
@@ -152,25 +152,40 @@ resource "helm_release" "gitlab" {
     value = true
   }
 
-  # set {
-  #   name  = "global.hosts.https"
-  #   value = "false"
-  # }
+  set {
+    name  = "global.hosts.https"
+    value = false
+  }
 
-  # set {
-  #   name  = "global.hosts.ssl"
-  #   value = "false"
-  # }
+  set {
+    name  = "global.hosts.ssl"
+    value = false
+  }
+
+  set {
+    name = "global.ingress.tls.enabled"
+    value = false
+  }
 
   set {
     name  = "global.registry.enabled"
     value = true
   }
 
-  # set {
-  #   name  = "registry.tls.enabled"
-  #   value = "false"
-  # }
+  set {
+    name = "global.imagePullSecrets[0].name"
+    value = "gitlab-imagepullsecret"
+  }
+
+  set {
+    name = "registry.image.pullSecrets[0].name"
+    value = "gitlab-imagepullsecret"
+  }
+
+  set {
+    name  = "global.registry.tls"
+    value = false
+  }
 
 
   set {
@@ -196,7 +211,7 @@ resource "helm_release" "gitlab" {
 
 
 output "final_gitlab_url" {
-  value = "http://gitlab.${var.hostname}"  # Oder wie auch immer Ihre GitLab-URL definiert ist
+  value = "http://gitlab.${var.hostname}" 
   description = "Deine Gitlab URL"
   sensitive = false
 }

@@ -7,7 +7,7 @@ function App() {
 
   const checkBackend = async () => {
     try {
-      const response = await fetch('http://backente:8080/health');
+      const response = await fetch('http://backente:8080');
       const data = await response.text();
       setBackendStatus(data);
     } catch (error) {

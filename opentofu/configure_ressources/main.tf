@@ -46,13 +46,6 @@ locals {
   env = { for tuple in regexall("(.*)=(.*)", file("../../.env")) : tuple[0] => tuple[1] }
 }
 
-variable "gitlab_runner_token" {
-  description = "GitLab Runner Registration Token"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
 data "external" "hostname" {
   program = ["sh", "-c", "echo '{\"hostname\": \"'$(hostname)'\"}'"]
 }
@@ -84,6 +77,7 @@ module "kubernetes" {
   providers = {
     kubernetes = kubernetes
     helm = helm
+    gitlab = gitlab
   }
 }
 
@@ -93,16 +87,12 @@ module "gitlab_runners" {
   namespace                 = "gitlab-runner"
   gitlab_url = local.gitlab_url
   gitlab_token   = var.gitlab_token
-  runner_token =  coalesce(local.env["GITLAB_RUNNER_TOKEN"], "")
   providers = {
     kubernetes = kubernetes
     helm = helm
     gitlab = gitlab
   }
 }
-
-
-
 
 output "gitlab_projects" {
   value     = module.gitlab_structure.gitlab_projects
@@ -111,4 +101,5 @@ output "gitlab_projects" {
 
 output "kubernetes_namespaces" {
   value = module.kubernetes.kubernetes_namespaces
+  sensitive = false
 }

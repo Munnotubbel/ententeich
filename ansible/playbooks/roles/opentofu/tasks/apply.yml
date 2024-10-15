@@ -56,7 +56,7 @@
 
 - name: Wait for GitLab to be accessible
   uri:
-    url: "https://gitlab.{{ local_hostname }}"
+    url: "http://gitlab.{{ local_hostname }}"
     validate_certs: no
   register: gitlab_check
   until: gitlab_check.status in [200, 301, 302]
@@ -98,7 +98,7 @@
         msg: |
           --- GitLab Login Information ---
 
-          URL:      https://gitlab.{{ local_hostname }}
+          URL:      http://gitlab.{{ local_hostname }}
 
           Username: root
 
@@ -114,7 +114,7 @@
 
       1. Log in to GitLab using the credentials provided above.
 
-      2. Navigate to: https://gitlab.{{ local_hostname }}/-/profile/personal_access_tokens
+      2. Navigate to: http://gitlab.{{ local_hostname }}/-/profile/personal_access_tokens
 
       3. Create a new token with the following scopes:
       

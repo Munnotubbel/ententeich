@@ -1,3 +1,4 @@
+---
 - name: Update DNF cache
   become: yes
   dnf:

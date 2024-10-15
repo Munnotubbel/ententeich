@@ -12,10 +12,10 @@ spec:
       labels:
         app: backente
     spec:
+      imagePullSecrets:
+        - name: gitlab-imagepullsecret 
       containers:
       - name: backente
-        image: gitlab-registry.gitlab.svc.cluster.local:5000/ententeich/backente:<patched>
+        image: registry.tubbel-top/ententeich/backente:<patched>
         ports:
         - containerPort: 8080
-      imagePullSecrets:
-        - name: gitlab-registry-secret

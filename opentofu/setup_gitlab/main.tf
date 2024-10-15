@@ -27,12 +27,6 @@ locals {
   env = { for tuple in regexall("(.*)=(.*)", file("../../.env")) : tuple[0] => tuple[1] }
 }
 
-variable "gitlab_runner_token" {
-  description = "GitLab Runner Registration Token"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
 
 data "external" "hostname" {
   program = ["sh", "-c", "echo '{\"hostname\": \"'$(hostname)'\"}'"]
@@ -47,7 +41,7 @@ data "kubernetes_service" "kubernetes" {
 
 locals {
   hostname = chomp(data.external.hostname.result.hostname)
-  gitlab_url = "https://gitlab.${local.hostname}"
+  gitlab_url = "http://gitlab.${local.hostname}"
 }
 
 locals {
@@ -59,8 +53,7 @@ module "gitlab_setup" {
   hostname   = local.hostname
   gitlab_url = local.gitlab_url
   cluster_ip = local.cluster_ip
-  pg_password = coalesce(local.env["PG_PASSWORD"], "")
-  runner_token =  coalesce(local.env["GITLAB_RUNNER_TOKEN"], "")
+  pg_password = coalesce(local.env["PG_PASSWORD"], "") 
   providers = {
     kubernetes = kubernetes
     helm       = helm

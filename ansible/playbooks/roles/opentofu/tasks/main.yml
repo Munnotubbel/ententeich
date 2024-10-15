@@ -1,3 +1,4 @@
+---
 - name: Make OpenTofu executable
   file:
     path: /usr/local/bin/tofu
