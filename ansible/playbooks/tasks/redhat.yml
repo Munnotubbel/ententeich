@@ -138,18 +138,18 @@
       changed_when: false
   when: kind_check.rc != 0
 
-- name: Check if snapd is available in repositories
-  command: "{{ ansible_pkg_mgr }} list snapd"
-  register: snapd_available
-  ignore_errors: yes
+- name: Check if system is Red Hat
+  ansible.builtin.shell: cat /etc/redhat-release
+  register: redhat_check
+  ignore_errors: true
   changed_when: false
 
-- name: Install EPEL repository if snapd is not available
+- name: Install EPEL repository if system is Red Hat
   become: yes
   package:
     name: epel-release
     state: present
-  when: snapd_available.rc != 0
+  when: redhat_check.rc == 0
 
 - name: Ensure snapd is installed
   become: yes
