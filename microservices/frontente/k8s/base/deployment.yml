@@ -14,6 +14,8 @@ spec:
     spec:
       containers:
       - name: frontente
-        image: registry:5000/frontente:<patched>
+        image: gitlab-registry.gitlab.svc.cluster.local:5000/ententeich/frontente:<patched>
         ports:
         - containerPort: 80
+      imagePullSecrets:
+        - name: gitlab-registry-secret

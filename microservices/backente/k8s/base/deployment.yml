@@ -14,6 +14,8 @@ spec:
     spec:
       containers:
       - name: backente
-        image: registry.minikube/backente:<patched>
+        image: gitlab-registry.gitlab.svc.cluster.local:5000/ententeich/backente:<patched>
         ports:
         - containerPort: 8080
+      imagePullSecrets:
+        - name: gitlab-registry-secret

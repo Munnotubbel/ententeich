@@ -32,19 +32,6 @@ resource "kubernetes_secret" "gitlab_postgresql_password" {
   }
 }
 
-resource "kubernetes_secret" "gitlab_runner" {
-  depends_on = [kubernetes_namespace.gitlab]
-  metadata {
-    name      = "gitlab-runner"
-    namespace = "gitlab"
-  }
-
-  data = {
-    registrationToken = base64encode(var.runner_token)
-  }
-
-  type = "Opaque"
-}
 
 resource "helm_release" "gitlab" {
   depends_on = [kubernetes_namespace.gitlab, kubernetes_secret.gitlab_postgresql_password]
@@ -99,7 +86,6 @@ resource "helm_release" "gitlab" {
     name = "gitlab.gitlab-shell.service.nodePort"
     value = 30103
   }
-
 
   set {
     name  = "certmanager-issuer.email"
@@ -157,16 +143,6 @@ resource "helm_release" "gitlab" {
   }
 
   set {
-    name  = "minio.persistance.size"
-    value = "10Gi"
-  }
-
-   set {
-    name  = "minio.persistance.storageClass"
-    value = "local-storage"
-  }
-
-  set {
     name  = "gitlab-runner.install"
     value = false
   }
@@ -176,7 +152,46 @@ resource "helm_release" "gitlab" {
     value = true
   }
 
+  # set {
+  #   name  = "global.hosts.https"
+  #   value = "false"
+  # }
 
+  # set {
+  #   name  = "global.hosts.ssl"
+  #   value = "false"
+  # }
+
+  set {
+    name  = "global.registry.enabled"
+    value = true
+  }
+
+  # set {
+  #   name  = "registry.tls.enabled"
+  #   value = "false"
+  # }
+
+
+  set {
+    name  = "global.appConfig.artifacts.enabled"
+    value = true
+  }
+
+  set {
+    name  = "global.appConfig.artifacts.bucket"
+    value = "gitlab-artifacts"
+  }
+
+  set {
+    name  = "minio.persistance.size"
+    value = "10Gi"
+  }
+
+  set {
+    name  = "minio.persistance.storageClass"
+    value = "local-storage"
+  }
 }
 
 

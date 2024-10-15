@@ -29,6 +29,19 @@ resource "kubernetes_namespace" "environments" {
   }
 }
 
+resource "null_resource" "add_certificates" {
+  provisioner "local-exec" {
+    command = <<EOT
+      for node in $(kind get nodes); do
+        kubectl get secret gitlab-registry-tls -n gitlab -o jsonpath="{.data['tls\.crt']}" | base64 --decode > registry.crt
+        docker cp registry.crt $node:/usr/local/share/ca-certificates/
+        docker exec $node update-ca-certificates
+      done
+    EOT
+  }
+}
+
+
 resource "kubernetes_deployment" "uptime_kuma" {
   depends_on = [kubernetes_namespace.environments]
   metadata {
@@ -165,6 +178,33 @@ resource "kubernetes_network_policy" "allow_all" {
       }
     }
   }
+}
+
+
+locals {
+  source_namespace = "gitlab"
+  target_namespaces = ["dev", "stg", "prod"]
+}
+
+data "kubernetes_secret" "gitlab_registry_secret" {
+  metadata {
+    name      = "gitlab-registry-secret"
+    namespace = local.source_namespace
+  }
+}
+
+resource "kubernetes_secret" "copied_secrets" {
+  depends_on = [kubernetes_namespace.environments]
+  for_each = toset(local.target_namespaces)
+
+  metadata {
+    name      = data.kubernetes_secret.gitlab_registry_secret.metadata[0].name
+    namespace = each.key
+  }
+
+  data = data.kubernetes_secret.gitlab_registry_secret.data
+
+  type = data.kubernetes_secret.gitlab_registry_secret.type
 }
 
 output "kubernetes_namespaces" {

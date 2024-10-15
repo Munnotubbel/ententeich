@@ -45,12 +45,6 @@
     }
   }
 
-data "kubernetes_secret" "gitlab_runner_secret" {
-  metadata {
-    name      = "gitlab-gitlab-runner-secret"
-    namespace = "gitlab"
-  }
-}
 
 resource "kubernetes_cluster_role_binding" "gitlab_runner_admin" {
   depends_on = [kubernetes_namespace.gitlab_runner]
@@ -79,10 +73,24 @@ resource "kubernetes_service_account" "gitlab_runner" {
   }
 }
 
-locals {
-  runner_registration_token = data.kubernetes_secret.gitlab_runner_secret.data["runner-registration-token"]
+
+data "kubernetes_secret" "gitlab_runner_secret" {
+  metadata {
+    name      = "gitlab-gitlab-runner-secret"
+    namespace = "gitlab"
+  }
 }
 
+resource "kubernetes_secret" "gitlab_runner_secret_copy" {
+  metadata {
+    name      = "gitlab-gitlab-runner-secret"
+    namespace = "gitlab-runner"
+    labels    = data.kubernetes_secret.gitlab_runner_secret.metadata[0].labels
+  }
+
+  data = data.kubernetes_secret.gitlab_runner_secret.data
+  type = data.kubernetes_secret.gitlab_runner_secret.type
+}
 
   resource "helm_release" "gitlab_runner" {
     depends_on = [kubernetes_namespace.gitlab_runner]
@@ -100,8 +108,8 @@ locals {
     }
 
     set {
-        name  = "runnerRegistrationToken"
-        value = local.runner_registration_token
+        name  = "runners.secret"
+        value = "gitlab-gitlab-runner-secret"
       }
 
     set {
@@ -134,6 +142,7 @@ locals {
       value = kubernetes_namespace.gitlab_runner.metadata[0].name
     }
 
+    
     set {
       name  = "concurrent"
       value = var.concurrent_runners
@@ -178,22 +187,40 @@ locals {
       name  = "certsSecretName"
       value = "gitlab-runner-tls"
     }
-    set {
-      name  = "runners.config"
-      value = <<-EOT
-        [[runners]]
-          environment = ["GIT_SSL_NO_VERIFY=1"]
-          [runners.kubernetes]
-          namespace = "gitlab-runner"
-          service_account = "gitlab-runner"
-          [runners.kubernetes.volumes]
-            [[runners.kubernetes.volumes.secret]]
-              name = "${kubernetes_secret.gitlab_runner_tls.metadata[0].name}"
-              mount_path = "/etc/gitlab-runner/certs/"
-          [runners.tls]
-            ca_file = "/etc/gitlab-runner/certs/gitlab.crt"
-      EOT
-    }
+
+
+set {
+  name  = "runners.config"
+  value = <<-EOT
+    [[runners]]
+      log_level = "debug"
+      environment = ["GIT_SSL_NO_VERIFY=1"]
+      [runners.kubernetes]
+      namespace = "gitlab-runner"
+      service_account = "gitlab-runner"
+      [runners.kubernetes.volumes]
+        [[runners.kubernetes.volumes.secret]]
+          name = "${kubernetes_secret.gitlab_runner_tls.metadata[0].name}"
+          mount_path = "/etc/gitlab-runner/certs/"
+        [[runners.kubernetes.volumes.secret]]
+          name = "gitlab-gitlab-runner-secret"
+          mount_path = "/secrets"
+      [runners.tls]
+        ca_file = "/etc/gitlab-runner/certs/gitlab.crt"
+      [runners.custom_build_dir]
+      [runners.cache]
+        [runners.cache.s3]
+        [runners.cache.gcs]
+      [runners.custom]
+        artifact_upload_timeout = "5m"
+        run_exec = ""
+        pre_clone_script = ""
+        pre_build_script = ""
+        post_build_script = ""
+        cleanup_exec = ""
+
+  EOT
+}
 
     set {
       name = "metrics.enabled"

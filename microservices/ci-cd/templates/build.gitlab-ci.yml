@@ -4,18 +4,23 @@
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
+    - env
+    - echo "$CI_REGISTRY"
+    - echo "$CI_REGISTRY_USER"
+    - echo "$CI_REGISTRY_PASSWORD"
     - export TIMESTAMP=$(date +%Y%m%d%H%M%S)
     - echo $TIMESTAMP > build_timestamp.txt
     - mkdir -p /kaniko/.docker
-    - echo ""
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor 
       --context "${CI_PROJECT_DIR}" 
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "registry:5000/${CI_PROJECT_NAME}:${TIMESTAMP}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile" 
+      --destination "${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}" 
       --insecure
-  artifacts:
-    paths:
-      - build_timestamp.txt
+      --insecure-registry="${CI_REGISTRY}"
+      --skip-tls-verify
+      --skip-tls-verify-registry="${CI_REGISTRY}"
+      --ignore-path=/product_uuid
   rules:
     - if: $CI_COMMIT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
@@ -24,7 +29,18 @@
   stage: build
   image: bitnami/minideb:latest
   script:
-    - docker build -t registry:5000/$CI_PROJECT_NAME:$CI_COMMIT_SHA -t registry:5000/$CI_PROJECT_NAME:$TIMESTAMP .
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor 
+      --context "${CI_PROJECT_DIR}" 
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile" 
+      --destination "${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}" 
+      --insecure
+      --insecure-registry="${CI_REGISTRY}"
+      --skip-tls-verify
+      --skip-tls-verify-registry="${CI_REGISTRY}"
+      --ignore-path=/product_uuid
+      --no-push
   rules:
     - if: $CI_MERGE_REQUEST_ID
 
