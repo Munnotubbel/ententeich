@@ -36,8 +36,7 @@
       --ignore-path=/product_uuid
       --no-push
   rules:
-    - if: $CI_COMMIT_BRANCH
-    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_MERGE_REQUEST_ID
 
 build:
   extends: .build
