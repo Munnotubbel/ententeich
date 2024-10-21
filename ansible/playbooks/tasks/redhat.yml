@@ -138,18 +138,15 @@
       changed_when: false
   when: kind_check.rc != 0
 
-- name: Check if system is Red Hat
-  ansible.builtin.shell: cat /etc/redhat-release
-  register: redhat_check
-  ignore_errors: true
-  changed_when: false
-
-- name: Install EPEL repository if system is Red Hat
+- name: Install EPEL repository on Red Hat systems
   become: yes
   package:
     name: epel-release
     state: present
-  when: redhat_check.rc == 0
+  when:
+    - ansible_distribution == "RedHat"
+    - ansible_distribution_major_version is version('8', '>=')
+
 
 - name: Ensure snapd is installed
   become: yes

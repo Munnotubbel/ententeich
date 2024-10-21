@@ -4,18 +4,12 @@
     name: gcr.io/kaniko-project/executor:debug
     entrypoint: [""]
   script:
-    - env
-    - echo "$CI_REGISTRY"
-    - echo "$CI_REGISTRY_USER"
-    - echo "$CI_REGISTRY_PASSWORD"
-    - export TIMESTAMP=$(date +%Y%m%d%H%M%S)
-    - echo $TIMESTAMP > build_timestamp.txt
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor 
-      --context "${CI_PROJECT_DIR}" 
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile" 
-      --destination "${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}" 
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}"
       --insecure
       --insecure-registry="${CI_REGISTRY}"
       --skip-tls-verify
@@ -31,10 +25,10 @@
   script:
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor 
-      --context "${CI_PROJECT_DIR}" 
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile" 
-      --destination "${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}" 
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}:${CI_PIPELINE_ID}"
       --insecure
       --insecure-registry="${CI_REGISTRY}"
       --skip-tls-verify

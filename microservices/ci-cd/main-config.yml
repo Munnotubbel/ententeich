@@ -5,15 +5,16 @@ include:
   - local: '/templates/deploy.gitlab-ci.yml'
 
 stages:
+  # - dev
   - test
   - build
   - deploy
-
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_COMMIT_BRANCH
     - if: $CI_MERGE_REQUEST_ID
+
 
 # BUILD
 build:
@@ -51,3 +52,42 @@ deploy_prod:
   when: manual
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+
+
+
+
+# .dev:
+#   image: curlimages/curl:latest
+#   script:
+#     - DEPLOY_URL="https://kuma.tubbel-top/api/push/vTTuEOZ5Ba?status=up&msg=Deployed:$KUBERNETES_NAMESPACE/$CI_PROJECT_NAME/$CI_PIPELINE_ID&ping=200"
+#     - curl -X POST $DEPLOY_URL
+
+
+# dev_dev:
+#   extends: .dev
+#   variables:
+#     KUBERNETES_NAMESPACE: ${KUBERNETES_NAMESPACE_DEV}
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "dev"
+#   environment:
+#     name: dev
+
+# dev_stg:
+#   extends: .dev
+#   variables:
+#     KUBERNETES_NAMESPACE: ${KUBERNETES_NAMESPACE_STG}
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "stg"
+#       when: manual
+#   environment:
+#     name: stg
+
+# dev_prod:
+#   extends: .dev
+#   variables:
+#     KUBERNETES_NAMESPACE: ${KUBERNETES_NAMESPACE_PROD}
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+#   environment:
+#     name: prod
